@@ -1,0 +1,47 @@
+# file types
+*.bak
+*.so
+*.*~
+*.iml
+*.swp
+*.log
+*.gz
+*.jar
+.DS_Store
+
+# directories
+**/bin/*
+**/tmp/*
+
+# editor stuff
+**/.idea/
+**/.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.settings
+
+
+# java stuff
+**/target/
+**/build/
+**/.gradle
+**/out/
+
+# python stuff
+**/.pytest_cache/
+*.pyc
+venv/
+__pycache__/
+instance/
+**/.benchmarks/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# nodejs stuff
+**/node_modules/
