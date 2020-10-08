@@ -2,7 +2,6 @@
 *.bak
 *.so
 *.*~
-*.iml
 *.swp
 *.log
 *.gz
@@ -33,7 +32,7 @@
 **/.pytest_cache/
 *.pyc
 venv/
-__pycache__/
+**/__pycache__/
 instance/
 **/.benchmarks/
 .pytest_cache/
@@ -45,3 +44,6 @@ build/
 
 # nodejs stuff
 **/node_modules/
+
+# sqlite files
+**/*.sqlite3
