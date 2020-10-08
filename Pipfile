@@ -11,7 +11,8 @@ flask = "*"
 flask-sqlalchemy = "*"
 python-gitlab = "*"
 pydriller = "*"
-celery = {extras = ["sqlalchemy"], version = "*"}
+celery = {extras = ["redis"], version = "~=4.4"}
+flower = "*"
 
 [requires]
 python_version = "3.8"
