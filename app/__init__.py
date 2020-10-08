@@ -6,7 +6,7 @@ def create_app(config_file="../config.py"):
     app = Flask(__name__)
     app.config.from_pyfile(config_file)
 
-    from .model import db, Author
+    from .models import db
     db.init_app(app)
     db.create_all(app=app)  # has no effect if the database file already exists
 
@@ -38,7 +38,7 @@ def make_celery(app):
 
 app = create_app()
 celery = make_celery(app)
-import app.tasks
+from .tasks import setup_periodic_tasks  # import for side effect only
 
 
 if __name__ == "__main__":

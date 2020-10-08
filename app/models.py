@@ -3,6 +3,17 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
+class CrawlerConfig(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(32), nullable=False)
+    ini = db.Column(db.Text)
+
+    def __repr__(self):
+        return f"""CrawlerConfig {self.name}
+                    {self.ini}
+                """
+
+
 class Author(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)

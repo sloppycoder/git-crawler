@@ -1,5 +1,5 @@
 from . import app, celery
-from .model import *
+from .models import *
 from celery.schedules import crontab
 
 
