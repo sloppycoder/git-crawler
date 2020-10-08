@@ -7,12 +7,12 @@ def create_app(config_file="../config.py"):
     app.config.from_pyfile(config_file)
 
     from .model import db, Author
-
     db.init_app(app)
     db.create_all(app=app)  # has no effect if the database file already exists
 
     @app.route("/ping")
     def root():
+        from .tasks import get_author_count
         result = get_author_count.delay()
         return f"{result.wait()} authors"
 
@@ -21,29 +21,24 @@ def create_app(config_file="../config.py"):
 
 
 def make_celery(app):
-    celery = Celery(
+    celery_app = Celery(
         app.import_name,
         broker=app.config['CELERY_BROKER_URL']
     )
-    celery.conf.update(app.config)
+    celery_app.conf.update(app.config)
 
-    class ContextTask(celery.Task):
+    class ContextTask(celery_app.Task):
         def __call__(self, *args, **kwargs):
             with app.app_context():
                 return self.run(*args, **kwargs)
 
-    celery.Task = ContextTask
-    return celery
+    celery_app.Task = ContextTask
+    return celery_app
 
 
 app = create_app()
 celery = make_celery(app)
-
-
-@celery.task()
-def get_author_count():
-    from .model import Author
-    return len(Author.query.all())
+import app.tasks
 
 
 if __name__ == "__main__":
