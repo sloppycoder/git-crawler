@@ -20,24 +20,24 @@ def create_app(config_file="../config.py"):
     return app
 
 
-def make_celery(app):
-    celery_app = Celery(
+def make_celery(app=None):
+    app = app or create_app()
+    celery = Celery(
         app.import_name,
-        broker=app.config['CELERY_BROKER_URL']
+        broker=app.config["CELERY_BROKER_URL"]
     )
-    celery_app.conf.update(app.config)
+    celery.conf.update(app.config)
 
-    class ContextTask(celery_app.Task):
+    class ContextTask(celery.Task):
         def __call__(self, *args, **kwargs):
             with app.app_context():
                 return self.run(*args, **kwargs)
 
-    celery_app.Task = ContextTask
-    return celery_app
+    celery.Task = ContextTask
+    return celery
 
 
-app = create_app()
-celery = make_celery(app)
+celery = make_celery()
 from .tasks import setup_periodic_tasks  # import for side effect only
 
 

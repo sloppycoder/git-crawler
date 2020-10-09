@@ -1,4 +1,5 @@
-from . import app, celery
+from flask import current_app
+from . import celery
 from .models import *
 from celery.schedules import crontab
 
@@ -6,7 +7,7 @@ from celery.schedules import crontab
 @celery.task()
 def get_author_count():
     num_of_authors = len(Author.query.all())
-    app.logger.debug(f"{num_of_authors} authors recorded")
+    current_app.logger.debug(f"{num_of_authors} authors recorded")
     return num_of_authors
 
 
