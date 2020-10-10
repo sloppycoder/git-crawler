@@ -1,26 +1,18 @@
 from flask import Flask
 from celery import Celery
+import os
 
 
-def create_app(config_file="../config.py"):
-    app = Flask(__name__)
-    app.config.from_pyfile(config_file)
-
-    from .models import db
-    db.init_app(app)
-    db.create_all(app=app)  # has no effect if the database file already exists
-
-    @app.route("/ping")
-    def root():
-        from .tasks import get_author_count
-        return f"{get_author_count()} authors"
-
-    app.logger.info(f"create flask app {app.import_name}")
-    return app
+def config_file():
+    conf = "../config.py"
+    env = os.getenv("FLASK_ENV", "development")
+    if env == "test":
+        conf = "../config_test.py"
+    print(f"Loading configuration from {conf}")
+    return conf
 
 
 def make_celery(app=None):
-    app = app or create_app()
     celery = Celery(
         app.import_name,
         broker=app.config["CELERY_BROKER_URL"]
@@ -36,7 +28,26 @@ def make_celery(app=None):
     return celery
 
 
-celery = make_celery()
+def create_app():
+    app = Flask(__name__)
+    app.config.from_pyfile(config_file())
+    print("===create_app===")
+
+    from .models import db
+    db.init_app(app)
+    db.create_all(app=app)  # has no effect if the database file already exists
+
+    @app.route("/ping")
+    def ping():
+        from .tasks import get_author_count
+        return f"{get_author_count()} authors"
+
+    app.logger.info(f"create flask app {app.import_name}")
+    return app
+
+
+app = create_app()
+celery = make_celery(app)
 from .tasks import setup_periodic_tasks  # import for side effect only
 
 

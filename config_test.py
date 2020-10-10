@@ -2,11 +2,10 @@ import tempfile
 import os
 
 tempdb_path = os.path.dirname(os.path.realpath(__file__))
+SQLITE3_FILE = tempfile.mktemp(suffix=".sqlite3", dir=tempdb_path)
+REDIS_URI = os.getenv("REDIS_URI", "redis://127.0.0.1:6379")
 
-tempdb = tempfile.mkdtemp(suffix=".sqlite3", dir=tempdb_path)
-print(tempdb)
-DATABASE_URI = f"sqlite:////{tempdb}"
-
-SQLALCHEMY_DATABASE_URI = DATABASE_URI
+SQLALCHEMY_DATABASE_URI = "sqlite:///" + SQLITE3_FILE
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+BROKER_URL = REDIS_URI
