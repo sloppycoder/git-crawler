@@ -31,7 +31,7 @@ def make_celery(app=None):
 def create_app():
     app = Flask(__name__)
     app.config.from_pyfile(config_file())
-    print("===create_app===")
+    print(f"===create_app using {config_file()} ===")
 
     from .models import db
     db.init_app(app)
@@ -42,7 +42,6 @@ def create_app():
         from .tasks import get_author_count
         return f"{get_author_count()} authors"
 
-    app.logger.info(f"create flask app {app.import_name}")
     return app
 
 

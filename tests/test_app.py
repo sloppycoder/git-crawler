@@ -1,13 +1,12 @@
 import os
 import pytest
-from app.models import db, ConfigEntry
-from app.tasks import get_author_count
+from app.models import db
+from app.tasks import get_author_count, register_git_projects
 from app.util import CrawlerConfig
 
 
 @pytest.fixture
 def client():
-    os.environ["FLASK_ENV"] = "test"
 
     from app import app
     app.config["TESTING"] = True
@@ -19,10 +18,14 @@ def client():
         yield client
 
     try:
-        # print(f"Deleting {app.config['SQLITE3_FILE']}")
+        print(f"Deleting {app.config['SQLITE3_FILE']}")
         os.unlink(app.config["SQLITE3_FILE"])
     except FileNotFoundError:
         pass
+
+
+def test_conf():
+    return CrawlerConfig(ini_file="tests/data/test.ini").conf
 
 
 def test_author_count_is_zero(client):
@@ -33,15 +36,20 @@ def test_author_count_is_zero(client):
 
 
 def test_crawler_config(client):
-
+    from app.models import ConfigEntry
     with client.application.app_context():
-        conf = CrawlerConfig(ini_file="tests/test.ini")
-        sec = conf.conf.sections()
-        print(sec)
-        assert len(sec) > 1
+        ini = CrawlerConfig(ini_file="tests/data/test.ini")
+        print(ini.conf.sections())
+        assert len(ini.conf.sections()) > 1
+        assert ini.name == "test.ini"
 
-        conf.save()
-        saved = ConfigEntry.query.filter_by(name=conf.name).first()
+        ini.save()
+        saved = ConfigEntry.query.filter_by(name=ini.name).first()
         print(saved)
         assert saved is not None
 
+
+def test_register_git_projects(client):
+    with client.application.app_context():
+        conf = test_conf()
+        register_git_projects(conf)

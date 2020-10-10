@@ -1,7 +1,12 @@
 import io
 import os.path
+import gitlab
 from configparser import ConfigParser
+from flask import current_app
+
 from .models import db, ConfigEntry
+
+CONFIG_NAME = "crawler.ini"
 
 
 class CrawlerConfig:
@@ -31,3 +36,14 @@ class CrawlerConfig:
         entry = entry or ConfigEntry(name=self.name, ini=self.ini)
         db.session.add(entry)
         db.session.commit()
+
+
+def gitlab_api():
+    token = current_app.config["GITLAB_TOKEN"]
+    url = current_app.config["GITLAB_URL"]
+    gl = gitlab.Gitlab(url, private_token=token)
+    return gl
+
+
+def crawler_config():
+    return CrawlerConfig(name=CONFIG_NAME)
