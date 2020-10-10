@@ -13,8 +13,7 @@ def create_app(config_file="../config.py"):
     @app.route("/ping")
     def root():
         from .tasks import get_author_count
-        result = get_author_count.delay()
-        return f"{result.wait()} authors"
+        return f"{get_author_count()} authors"
 
     app.logger.info(f"create flask app {app.import_name}")
     return app

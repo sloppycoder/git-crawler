@@ -28,17 +28,6 @@ class Author(db.Model):
         return f"[Author {self.name} <{self.email}>]"
 
 
-class Commit(db.Model):
-    id = db.Column(db.String(20), primary_key=True, nullable=False)
-    author_id = db.Column(db.Integer, db.ForeignKey("author.id"), nullable=False)
-    author = db.relationship("Author", backref="author", lazy=True)
-    repo_id = db.Column(db.Integer, db.ForeignKey("repository.id"), nullable=False)
-    repo = db.relationship("Repository", backref="repository", lazy=True)
-
-    def __repr__(self):
-        return f"[Commit<{self.id}>]"
-
-
 class Repository(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), index=True, unique=True)
@@ -52,3 +41,20 @@ class Repository(db.Model):
 
     def __repr__(self):
         return f"[GitRepo<{self.name}>]"
+
+
+class Commit(db.Model):
+    id = db.Column(db.String(20), primary_key=True, nullable=False)
+    author_id = db.Column(
+        db.Integer,
+        db.ForeignKey(f"{Author.__tablename__}.id"),
+        nullable=False)
+    author = db.relationship("Author", backref="author", lazy=True)
+    repo_id = db.Column(
+        db.Integer,
+        db.ForeignKey(f"{Repository.__tablename__}.id"),
+        nullable=False)
+    repo = db.relationship("Repository", backref="repository", lazy=True)
+
+    def __repr__(self):
+        return f"[Commit<{self.id}>]"
