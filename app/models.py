@@ -45,14 +45,12 @@ class Repository(db.Model):
 class Commit(db.Model):
     id = db.Column(db.String(20), primary_key=True, nullable=False)
     author_id = db.Column(
-        db.Integer,
-        db.ForeignKey(f"{Author.__tablename__}.id"),
-        nullable=False)
+        db.Integer, db.ForeignKey(f"{Author.__tablename__}.id"), nullable=False
+    )
     author = db.relationship("Author", backref="author", lazy=True)
     repo_id = db.Column(
-        db.Integer,
-        db.ForeignKey(f"{Repository.__tablename__}.id"),
-        nullable=False)
+        db.Integer, db.ForeignKey(f"{Repository.__tablename__}.id"), nullable=False
+    )
     repo = db.relationship("Repository", backref="repository", lazy=True)
 
     def __repr__(self):

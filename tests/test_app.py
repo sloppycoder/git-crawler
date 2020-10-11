@@ -9,6 +9,7 @@ from app.util import CrawlerConfig
 def client():
 
     from app import app
+
     app.config["TESTING"] = True
 
     with app.test_client() as client:
@@ -37,6 +38,7 @@ def test_author_count_is_zero(client):
 
 def test_crawler_config(client):
     from app.models import ConfigEntry
+
     with client.application.app_context():
         ini = CrawlerConfig(ini_file="tests/data/test.ini")
         print(ini.conf.sections())

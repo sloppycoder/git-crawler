@@ -1,8 +1,9 @@
 import glob
-from . import celery
-from .models import *
-from .util import *
+from configparser import ConfigParser
 from celery.schedules import crontab
+from . import celery
+from .models import Author, Repository, Commit
+from .util import gitlab_api
 
 
 @celery.task()
@@ -20,12 +21,13 @@ def register_git_projects(conf: ConfigParser) -> None:
         project_type, filter = section.get("type", "MISC"), section.get("filter", "*")
         if local_path is None:
             # remote project, get project info from gitlab
-            for proj in gl.groups.get(group).projects.list(include_subgroups=True, as_list=False):
+            for proj in gl.groups.get(group).projects.list(
+                include_subgroups=True, as_list=False
+            ):
                 print(f"{proj.name} => {proj.http_url_to_repo}")
         else:
             for dir in glob.glob(f"{local_path}/{filter}"):
                 print(dir)
-
 
 
 @celery.on_after_finalize.connect
@@ -36,4 +38,3 @@ def setup_periodic_tasks(sender, **kwargs):
     #     crontab(hour=7, minute=30, day_of_week=1),
     #     get_author_count.s()
     # )
-

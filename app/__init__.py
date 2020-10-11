@@ -13,10 +13,7 @@ def config_file():
 
 
 def make_celery(app=None):
-    celery = Celery(
-        app.import_name,
-        broker=app.config["CELERY_BROKER_URL"]
-    )
+    celery = Celery(app.import_name, broker=app.config["CELERY_BROKER_URL"])
     celery.conf.update(app.config)
 
     class ContextTask(celery.Task):
@@ -34,12 +31,14 @@ def create_app():
     print(f"===create_app using {config_file()} ===")
 
     from .models import db
+
     db.init_app(app)
     db.create_all(app=app)  # has no effect if the database file already exists
 
     @app.route("/ping")
     def ping():
         from .tasks import get_author_count
+
         return f"{get_author_count()} authors"
 
     return app
