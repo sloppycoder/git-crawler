@@ -4,15 +4,16 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-flake8-black = "*"
 pytest = "*"
+pytest-env = "*"
+black = "==20.8b1"
+flake8 = "*"
 
 [packages]
-flask = "*"
-flask-sqlalchemy = "*"
+Flask = "*"
+Flask-SQLAlchemy = "*"
 python-gitlab = "*"
-pydriller = "*"
-celery = {extras = ["redis"], version = "~=4.4"}
+PyDriller = "*"
 flower = "*"
 
 [requires]
@@ -20,3 +21,7 @@ python_version = "3.8"
 
 [pipenv]
 allow_prereleases = true
+
+[packages.celery]
+extras = [ "redis",]
+version = "~=4.4"
