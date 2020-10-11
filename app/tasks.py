@@ -1,18 +1,19 @@
-import glob
 from flask import current_app
 from configparser import ConfigParser
+from celery.schedules import crontab
 from pydriller import GitRepository
 from git import InvalidGitRepositoryError
-from celery.schedules import crontab
+
 from . import celery
-from .models import db, Author, Repository, Commit
 from .util import gitlab_api, crawler_config
+from .indexer import register_remote_repository, register_local_repository, author_count
+
+import glob
 
 
 @celery.task()
 def get_author_count():
-    num_of_authors = len(Author.query.all())
-    return num_of_authors
+    return author_count()
 
 
 @celery.task()
@@ -24,45 +25,16 @@ def register_git_projects(conf: ConfigParser = None) -> None:
         group, local_path = section.get("group"), section.get("local_path")
         project_type, filter = section.get("type", "MISC"), section.get("filter", "*")
         if local_path is None:
-            try:
-                # remote project, get project info from gitlab
-                for proj in gl.groups.get(group).projects.list(
-                    include_subgroups=True, as_list=False
-                ):
-                    repo = Repository.query.filter_by(
-                        name=proj.path_with_namespace
-                    ).first()
-                    if repo is None:
-                        repo = Repository(
-                            name=proj.path_with_namespace,
-                            is_remote=True,
-                            http_url=proj.http_url_to_repo,
-                            ssh_url=proj.ssh_url_to_repo,
-                            type=project_type,
-                        )
-                    else:
-                        repo.type = project_type
-                    db.session.add(repo)
-                    db.session.commit()
-                    current_app.logger.info(
-                        f"registered remote repo {proj.name} => {proj.http_url_to_repo}"
-                    )
-            except Exception as e:
-                current_app.logger.info(f"Exception => {e}")
+            # remote project, get project info from gitlab
+            for proj in gl.groups.get(group).projects.list(
+                include_subgroups=True, as_list=False
+            ):
+                register_remote_repository(proj, project_type)
         else:
             for path in glob.glob(f"{local_path}/{filter}"):
                 try:
                     if GitRepository(path).total_commits() > 0:
-                        repo = Repository.query.filter_by(name=path).first()
-                        if repo is None:
-                            repo = Repository(
-                                name=path, is_remote=False, type=project_type
-                            )
-                        else:
-                            repo.type = project_type
-                        db.session.add(repo)
-                        db.session.commit()
-                        current_app.logger.info(f"registered local repo {path}")
+                        register_local_repository(path, project_type)
                 except InvalidGitRepositoryError:
                     current_app.logger.info(f"skipping invalid repository path {path}")
 
