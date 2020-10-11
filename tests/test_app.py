@@ -2,7 +2,7 @@ import os
 import pytest
 from app.models import db
 from app.tasks import get_author_count, register_git_projects
-from app.indexer import locate_author, author_count
+from app.indexer import locate_author, author_count, index_repository
 from app.util import CrawlerConfig
 
 
@@ -21,7 +21,7 @@ def client():
     try:
         if os.getenv("FLASK_ENV") == "test":
             app.logger.warning(f"Deleting {app.config['SQLITE3_FILE']}")
-            # os.unlink(app.config["SQLITE3_FILE"])
+            os.unlink(app.config["SQLITE3_FILE"])
     except FileNotFoundError:
         pass
 
@@ -86,3 +86,12 @@ def test_find_author(client):
 
         dev3 = locate_author("dev1", "dev1@banana.org")
         assert dev3.email == dev1.email
+
+
+def test_index_repository(client):
+    index_repository(
+        "/home/lee/Projects/ktb/next/gitlab/mirrors/frontend/ktb-next-mock-server.git"
+    )
+    index_repository(
+        "git@gitlab.com:mobilityaccelerator/ngcc/devsecops/elk-jenkins.git"
+    )

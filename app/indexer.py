@@ -1,7 +1,7 @@
 from flask import current_app
 from pydriller import RepositoryMining
 from gitlab.v4.objects import GroupProject
-from .models import db, Author, Repository, Commit
+from .models import db, Author, Repository, Commit, RepoStatus
 
 
 def author_count() -> int:
@@ -24,7 +24,7 @@ def register_remote_repository(proj: GroupProject, repo_type: str) -> Repository
     db.session.add(repo)
     db.session.commit()
     current_app.logger.info(
-        f"registered remote repo {proj.name} => {proj.http_url_to_repo}"
+        f"registered remote repo {proj.name} => {proj.ssh_url_to_repo}"
     )
 
     return repo
@@ -63,3 +63,12 @@ def locate_author(name: str, email: str, create: bool = True) -> Author:
         if layer > 10:
             raise Exception("too many alias levels, please simplify the data")
         author = author.parent
+
+
+def index_repository(repo_url: str) -> int:
+    for commit in RepositoryMining(repo_url).traverse_commits():
+        print(commit)
+
+
+def index_all_repositories():
+    repo = Repository.query.filter_by(status=RepoStatus.Ready).first()

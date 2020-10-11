@@ -1,7 +1,15 @@
 from flask_sqlalchemy import SQLAlchemy
 import datetime
+import enum
 
 db = SQLAlchemy()
+
+
+class RepoStatus(enum.Enum):
+    Ready = 1
+    InUse = 2
+    Error = 3
+    Disabled = 99
 
 
 class ConfigEntry(db.Model):
@@ -38,7 +46,8 @@ class Repository(db.Model):
     is_remote = db.Column(db.Boolean, default=False)
     http_url = db.Column(db.String(256))
     ssh_url = db.Column(db.String(256))
-    last_scanned_at = db.Column(db.DateTime, default=datetime.datetime.fromtimestamp(0))
+    status = db.Column(db.Enum(RepoStatus), default=RepoStatus.Ready)
+    last_status_at = db.Column(db.DateTime, default=datetime.datetime.fromtimestamp(0))
     last_error = db.Column(db.String(256))
 
     def __repr__(self):
