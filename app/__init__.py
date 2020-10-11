@@ -8,7 +8,6 @@ def config_file():
     env = os.getenv("FLASK_ENV", "development")
     if env == "test":
         conf = "../config_test.py"
-    print(f"Loading configuration from {conf}")
     return conf
 
 
@@ -31,9 +30,18 @@ def create_app():
     print(f"===create_app using {config_file()} ===")
 
     from .models import db
+    from .util import CrawlerConfig, crawler_config, CONFIG_NAME
 
     db.init_app(app)
     db.create_all(app=app)  # has no effect if the database file already exists
+    # if the configuration does not exist in database
+    # load from file
+    with app.app_context():
+        if crawler_config() is None:
+            file_path = os.path.dirname(os.path.realpath(__file__))
+            CrawlerConfig(
+                name=CONFIG_NAME, ini_file=f"{file_path}/{CONFIG_NAME}"
+            ).save()
 
     @app.route("/ping")
     def ping():

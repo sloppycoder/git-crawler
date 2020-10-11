@@ -15,18 +15,19 @@ class CrawlerConfig:
     ini: str = None
 
     def __init__(self, name: str = None, ini_file: str = None):
-        if name is not None:
-            entry = ConfigEntry.query.filter_by(name=name).first()
-            if entry is None:
-                raise Exception(f"{name} not found in config table")
-            self.name = name
-            self.ini = entry.ini
-        elif ini_file is not None:
+        if name is None and ini_file is None:
+            raise Exception("either name or ini_file should be specified")
+
+        if ini_file is not None:
             with open(ini_file) as f:
                 self.name = name or os.path.basename(ini_file)
                 self.ini = "".join(f.readlines())
-        else:
-            raise Exception("either name or ini_file should be specified")
+
+        if name is not None:
+            entry = ConfigEntry.query.filter_by(name=name).first()
+            if entry is not None:
+                self.name = name
+                self.ini = entry.ini
 
         self.conf = ConfigParser()
         self.conf.read_file(io.StringIO(self.ini))
@@ -46,4 +47,5 @@ def gitlab_api():
 
 
 def crawler_config():
-    return CrawlerConfig(name=CONFIG_NAME)
+    entry = CrawlerConfig(name=CONFIG_NAME)
+    return entry if entry.ini is not None else None

@@ -1,3 +1,4 @@
+import os
 import pytest
 from app.models import db
 from app.tasks import get_author_count, register_git_projects
@@ -18,8 +19,9 @@ def client():
         yield client
 
     try:
-        print(f"Deleting {app.config['SQLITE3_FILE']}")
-        # os.unlink(app.config["SQLITE3_FILE"])
+        if os.getenv("FLASK_ENV") == "test":
+            print(f"Deleting {app.config['SQLITE3_FILE']}")
+            os.unlink(app.config["SQLITE3_FILE"])
     except FileNotFoundError:
         pass
 
@@ -39,6 +41,8 @@ def test_crawler_config(client):
     from app.models import ConfigEntry
 
     with client.application.app_context():
+        assert CrawlerConfig(name="does_not_exist.ini").name is None
+
         ini = CrawlerConfig(ini_file="tests/data/test.ini")
         assert len(ini.conf.sections()) > 1
         assert ini.name == "test.ini"
