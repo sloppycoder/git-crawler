@@ -18,14 +18,16 @@ class ConfigEntry(db.Model):
 class Author(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
-    email = db.Column(db.String(120), nullable=False)
-    alt_emails = db.Column(db.String(512))
+    email = db.Column(db.String(120), index=True, unique=True, nullable=False)
     tag1 = db.Column(db.String(32))
     tag2 = db.Column(db.String(32))
     tag3 = db.Column(db.String(32))
+    is_alias = db.Column(db.Boolean, default=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey("author.id"), nullable=True)
+    parent = db.relationship("Author", remote_side=[id])
 
     def __repr__(self):
-        return f"[Author {self.name} <{self.email}>]"
+        return f"[Author<{self.email}>]"
 
 
 class Repository(db.Model):
@@ -40,7 +42,7 @@ class Repository(db.Model):
     last_error = db.Column(db.String(256))
 
     def __repr__(self):
-        return f"[GitRepo<{self.name}>]"
+        return f"[Repository<{self.name}>]"
 
 
 class Commit(db.Model):

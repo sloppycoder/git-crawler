@@ -1,9 +1,14 @@
 from flask import current_app
 from pydriller import RepositoryMining
+from gitlab.v4.objects import GroupProject
 from .models import db, Author, Repository, Commit
 
 
-def register_remote_repository(proj: dict, repo_type: str) -> Repository:
+def author_count() -> int:
+    return len(Author.query.all())
+
+
+def register_remote_repository(proj: GroupProject, repo_type: str) -> Repository:
     repo = Repository.query.filter_by(name=proj.path_with_namespace).first()
     if repo is None:
         repo = Repository(
@@ -39,5 +44,22 @@ def register_local_repository(path: str, repo_type: str) -> Repository:
     return repo
 
 
-def author_count() -> int:
-    return len(Author.query.all())
+def locate_author(name: str, email: str, create: bool = True) -> Author:
+    layer = 0
+    author = Author.query.filter_by(email=email).first()
+    # create new author if email does not exist
+    if author is None:
+        if create:
+            author = Author(name=name, email=email, is_alias=False)
+            db.session.add(author)
+            db.session.commit()
+            current_app.logger.info(f"created new Author {author}")
+        return author
+    # recursion to find the top level author
+    while True:
+        if author and not author.is_alias:
+            return author
+        layer += 1
+        if layer > 10:
+            raise Exception("too many alias levels, please simplify the data")
+        author = author.parent
