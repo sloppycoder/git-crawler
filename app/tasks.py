@@ -1,4 +1,5 @@
 import glob
+from flask import current_app
 from configparser import ConfigParser
 from pydriller import GitRepository
 from git import InvalidGitRepositoryError
@@ -17,7 +18,6 @@ def get_author_count():
 @celery.task()
 def register_git_projects(conf: ConfigParser = None) -> None:
     conf = conf or crawler_config().conf
-    print(f"conf={conf}")
     gl = gitlab_api()
     for key in [s for s in conf.sections() if s.find("project.") == 0]:
         section = conf[key]
@@ -44,11 +44,11 @@ def register_git_projects(conf: ConfigParser = None) -> None:
                         repo.type = project_type
                     db.session.add(repo)
                     db.session.commit()
-                    print(
+                    current_app.logger.info(
                         f"registered remote repo {proj.name} => {proj.http_url_to_repo}"
                     )
             except Exception as e:
-                print(f"Exception => {e}")
+                current_app.logger.info(f"Exception => {e}")
         else:
             for path in glob.glob(f"{local_path}/{filter}"):
                 try:
@@ -62,9 +62,9 @@ def register_git_projects(conf: ConfigParser = None) -> None:
                             repo.type = project_type
                         db.session.add(repo)
                         db.session.commit()
-                        print(f"registered local repo {path}")
+                        current_app.logger.info(f"registered local repo {path}")
                 except InvalidGitRepositoryError:
-                    print(f"skipping invalid repository path {path}")
+                    current_app.logger.info(f"skipping invalid repository path {path}")
 
 
 @celery.on_after_finalize.connect

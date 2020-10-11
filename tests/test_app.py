@@ -20,7 +20,7 @@ def client():
 
     try:
         if os.getenv("FLASK_ENV") == "test":
-            print(f"Deleting {app.config['SQLITE3_FILE']}")
+            app.logger.warning(f"Deleting {app.config['SQLITE3_FILE']}")
             os.unlink(app.config["SQLITE3_FILE"])
     except FileNotFoundError:
         pass

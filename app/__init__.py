@@ -27,7 +27,8 @@ def make_celery(app=None):
 def create_app():
     app = Flask(__name__)
     app.config.from_pyfile(config_file())
-    print(f"===create_app using {config_file()} ===")
+    app.logger.setLevel(logging.INFO)
+    app.logger.warning(f"=== create_app using {config_file()} ===")
 
     from .models import db
     from .util import CrawlerConfig, crawler_config, CONFIG_NAME
