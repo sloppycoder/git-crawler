@@ -1,4 +1,3 @@
-import os
 import pytest
 from app.models import db
 from app.tasks import get_author_count, register_git_projects
@@ -20,7 +19,7 @@ def client():
 
     try:
         print(f"Deleting {app.config['SQLITE3_FILE']}")
-        os.unlink(app.config["SQLITE3_FILE"])
+        # os.unlink(app.config["SQLITE3_FILE"])
     except FileNotFoundError:
         pass
 
@@ -41,13 +40,12 @@ def test_crawler_config(client):
 
     with client.application.app_context():
         ini = CrawlerConfig(ini_file="tests/data/test.ini")
-        print(ini.conf.sections())
         assert len(ini.conf.sections()) > 1
         assert ini.name == "test.ini"
 
         ini.save()
         saved = ConfigEntry.query.filter_by(name=ini.name).first()
-        print(saved)
+        # print(saved)
         assert saved is not None
 
 

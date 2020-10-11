@@ -1,8 +1,10 @@
 import glob
 from configparser import ConfigParser
+from pydriller import GitRepository
+from git import InvalidGitRepositoryError
 from celery.schedules import crontab
 from . import celery
-from .models import Author, Repository, Commit
+from .models import db, Author, Repository, Commit
 from .util import gitlab_api
 
 
@@ -20,14 +22,35 @@ def register_git_projects(conf: ConfigParser) -> None:
         group, local_path = section.get("group"), section.get("local_path")
         project_type, filter = section.get("type", "MISC"), section.get("filter", "*")
         if local_path is None:
-            # remote project, get project info from gitlab
-            for proj in gl.groups.get(group).projects.list(
-                include_subgroups=True, as_list=False
-            ):
-                print(f"{proj.name} => {proj.http_url_to_repo}")
+            try:
+                # remote project, get project info from gitlab
+                for proj in gl.groups.get(group).projects.list(
+                    include_subgroups=True, as_list=False
+                ):
+                    repo = Repository.query.filter_by(name=proj.path_with_namespace).first()
+                    if repo is None:
+                        repo = Repository(name=proj.path_with_namespace, is_remote=True, http_url=proj.http_url_to_repo, ssh_url=proj.ssh_url_to_repo, type=project_type)
+                    else:
+                        repo.type = project_type
+                    db.session.add(repo)
+                    db.session.commit()
+                    print(f"registered remote repo {proj.name} => {proj.http_url_to_repo}")
+            except Exception as e:
+                print(f"Exception => {e}")
         else:
-            for dir in glob.glob(f"{local_path}/{filter}"):
-                print(dir)
+            for path in glob.glob(f"{local_path}/{filter}"):
+                try:
+                    if GitRepository(path).total_commits() > 0:
+                        repo = Repository.query.filter_by(name=path).first()
+                        if repo is None:
+                            repo = Repository(name=path, is_remote=False, type=project_type)
+                        else:
+                            repo.type = project_type
+                        db.session.add(repo)
+                        db.session.commit()
+                        print(f"registered local repo {path}")
+                except InvalidGitRepositoryError:
+                    print(f"skipping invalid repository path {path}")
 
 
 @celery.on_after_finalize.connect

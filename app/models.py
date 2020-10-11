@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+import datetime
 
 db = SQLAlchemy()
 
@@ -29,13 +30,13 @@ class Author(db.Model):
 
 class Repository(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), index=True, unique=True)
+    name = db.Column(db.String(512), index=True, unique=True)
     type = db.Column(db.String(8), nullable=False, default="MISC")
     enabled = db.Column(db.Boolean, default=True)
     is_remote = db.Column(db.Boolean, default=False)
     http_url = db.Column(db.String(256))
     ssh_url = db.Column(db.String(256))
-    last_scanned_at = db.Column(db.DateTime)
+    last_scanned_at = db.Column(db.DateTime, default=datetime.datetime.fromtimestamp(0))
     last_error = db.Column(db.String(256))
 
     def __repr__(self):
@@ -44,6 +45,7 @@ class Repository(db.Model):
 
 class Commit(db.Model):
     id = db.Column(db.String(20), primary_key=True, nullable=False)
+    message = db.Column(db.String(2048))
     author_id = db.Column(
         db.Integer, db.ForeignKey(f"{Author.__tablename__}.id"), nullable=False
     )
