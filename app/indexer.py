@@ -70,22 +70,32 @@ def index_repository(repo: Repository) -> int:
         return 0
 
     count = 0
+    old_commits = all_hash_for_repo(repo)
+
     repo_url = repo.ssh_url if repo.is_remote else repo.name
     for commit in RepositoryMining(repo_url).traverse_commits():
-        if GitCommit.query.filter_by(id=commit.hash).first() is None:
-            dev = commit.author
-            author = locate_author(name=dev.name, email=dev.email)
-            entry = GitCommit(
-                id=commit.hash,
-                message=commit.msg,
-                author=author,
-                repo=repo,
-                created_at=commit.committer_date,
-            )
-            db.session.add(entry)
-            db.session.commit()
-            count += 1
+        if commit.hash in old_commits:
+            continue
+        dev = commit.author
+        author = locate_author(name=dev.name, email=dev.email)
+        entry = GitCommit(
+            id=commit.hash,
+            message=commit.msg,
+            author=author,
+            repo=repo,
+            created_at=commit.committer_date,
+        )
+        db.session.add(entry)
+        count += 1
+    if count > 0:
+        db.session.commit()
     return count
+
+
+def all_hash_for_repo(repo: Repository) -> dict:
+    return dict(
+        [(c.id, c.author.id) for c in GitCommit.query.filter_by(repo=repo).all()]
+    )
 
 
 def commit_count(repo: Repository) -> int:
