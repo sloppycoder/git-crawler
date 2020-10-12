@@ -2,7 +2,7 @@ from flask import current_app
 from configparser import ConfigParser
 from celery.schedules import crontab
 from pydriller import GitRepository
-from git import InvalidGitRepositoryError
+from git import InvalidGitRepositoryError, NoSuchPathError
 
 from . import celery
 from .util import gitlab_api, crawler_config
@@ -36,6 +36,8 @@ def register_git_projects(conf: ConfigParser = None) -> None:
                     if GitRepository(path).total_commits() > 0:
                         register_local_repository(path, project_type)
                 except InvalidGitRepositoryError:
+                    current_app.logger.info(f"skipping non Git path {path}")
+                except NoSuchPathError:
                     current_app.logger.info(f"skipping invalid repository path {path}")
 
 
