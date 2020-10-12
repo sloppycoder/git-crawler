@@ -35,7 +35,6 @@ venv/
 **/__pycache__/
 instance/
 **/.benchmarks/
-.pytest_cache/
 .coverage
 htmlcov/
 dist/
