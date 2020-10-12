@@ -19,7 +19,7 @@ def first_repo(is_remote: bool) -> Repository:
 
 def all_hash_for_repo(repo: Repository) -> dict:
     return dict(
-        [(c.id, c.author.id) for c in GitCommit.query.filter_by(repo=repo).all()]
+        [(c.sha, c.author.id) for c in GitCommit.query.filter_by(repo=repo).all()]
     )
 
 
@@ -94,7 +94,7 @@ def index_repository(repo: Repository) -> int:
         dev = commit.committer
         author = locate_author(name=dev.name, email=dev.email)
         git_commit = GitCommit(
-            id=commit.hash,
+            sha=commit.hash,
             message=commit.msg,
             author=author,
             repo=repo,
@@ -136,10 +136,12 @@ def index_all_repositories() -> None:
     ):
         print(f"indexing repo {repo.name} ")
         try:
-            index_repository(repo)
+            n = index_repository(repo)
+            print(f"indexed repo {repo.name} adding {n} new commits")
+
+            repo.last_status_at = datetime.now()
+            db.session.add(repo)
+            db.session.commit()
         except Exception as e:
             repo.last_error = str(e)
-        repo.last_status_at = datetime.now()
-        db.session.add(repo)
-        db.session.commit()
 

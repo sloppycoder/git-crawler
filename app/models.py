@@ -55,7 +55,8 @@ class Repository(db.Model):
 
 
 class GitCommit(db.Model):
-    id = db.Column(db.String(20), primary_key=True, nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    sha = db.Column(db.String(20), nullable=False)
     message = db.Column(db.String(2048))
     lines_added = db.Column(db.Integer)
     lines_removed = db.Column(db.Integer)
