@@ -49,8 +49,9 @@ def prep_test_conf(tmp_path):
 
 
 def test_ignore_patterns():
-    assert should_ignore_path("some_stupid_dir/vendor/librar/stuff/blah.go")
+    assert should_ignore_path("vendor/librar/stuff/blah.go")
     assert should_ignore_path("lib/my_stupid_jar/blah.jar")
+    assert should_ignore_path("blah.jar")
     assert not should_ignore_path("src/main/my/company/package/Application.java")
     assert not should_ignore_path("src/resources/application.yaml")
 

@@ -8,8 +8,8 @@ import re
 # files matches any of the regex will not be counted
 # towards commit stats
 IGNORE_PATTERNS = [
-    re.compile(".*/vendor/.*\\.go$"),
-    re.compile(".*/.*\\.jar$"),
+    re.compile("vendor/.*\\.go$"),
+    re.compile(".*\\.jar$"),
 ]
 
 
