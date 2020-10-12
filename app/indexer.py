@@ -134,14 +134,16 @@ def index_all_repositories() -> None:
         Repository.status == RepoStatus.Ready,
         Repository.last_status_at < cut_off,
     ):
-        print(f"indexing repo {repo.name} ")
+        repo_name = repo.name
+        print(f"indexing repo {repo_name} ")
         try:
             n = index_repository(repo)
-            print(f"indexed repo {repo.name} adding {n} new commits")
-
-            repo.last_status_at = datetime.now()
-            db.session.add(repo)
-            db.session.commit()
+            print(f"indexed repo {repo_name} adding {n} new commits")
         except Exception as e:
+            current_app.logger.warn(f"error when indexing repo {repo_name} => {e}")
+            db.session.rollback()
             repo.last_error = str(e)
 
+        repo.last_status_at = datetime.now()
+        db.session.add(repo)
+        db.session.commit()
