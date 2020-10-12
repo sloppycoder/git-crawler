@@ -11,6 +11,7 @@ from app.indexer import (
     index_all_repositories,
     commit_count,
     first_repo,
+    should_ignore_path,
 )
 from app.util import CrawlerConfig
 
@@ -45,6 +46,13 @@ def prep_test_conf(tmp_path):
     conf = CrawlerConfig(ini_file="tests/test.ini").conf
     conf["project.local"]["local_path"] = str(tmp_path)
     return conf
+
+
+def test_ignore_patterns():
+    assert should_ignore_path("some_stupid_dir/vendor/librar/stuff/blah.go")
+    assert should_ignore_path("lib/my_stupid_jar/blah.jar")
+    assert not should_ignore_path("src/main/my/company/package/Application.java")
+    assert not should_ignore_path("src/resources/application.yaml")
 
 
 def test_author_count_is_zero(client):

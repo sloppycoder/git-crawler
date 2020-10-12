@@ -3,6 +3,14 @@ from datetime import datetime, timedelta
 from pydriller import RepositoryMining
 from gitlab.v4.objects import GroupProject
 from .models import db, Author, Repository, GitCommit, RepoStatus
+import re
+
+# files matches any of the regex will not be counted
+# towards commit stats
+IGNORE_PATTERNS = [
+    re.compile(".*/vendor/.*\\.go$"),
+    re.compile(".*/.*\\.jar$"),
+]
 
 
 def author_count() -> int:
@@ -22,6 +30,16 @@ def all_hash_for_repo(repo: Repository) -> dict:
         [(c.sha, c.author.id) for c in GitCommit.query.filter_by(repo=repo).all()]
     )
 
+
+def should_ignore_path(path: str) -> bool:
+    """
+    return true if the path should be ignore
+    for calculating commit stats
+    """
+    for re in IGNORE_PATTERNS:
+        if re.match(path):
+            return True
+    return False
 
 def register_remote_repository(proj: GroupProject, repo_type: str) -> Repository:
     repo = Repository.query.filter_by(name=proj.path_with_namespace).first()
@@ -114,13 +132,14 @@ def update_commit_stats(git_commit: GitCommit, modifications: list) -> GitCommit
     # TODO: evaluate how to update the stats carefully
     added, removed, nloc = 0, 0, 0
     for mod in modifications:
-        if mod.change_type is not None:
-            # print(
-            #     f"type={mod.change_type.name}, added={mod.added}, removed={mod.removed}, nloc={mod.nloc}"
-            # )
-            added += mod.added
-            removed += mod.removed
-            nloc += mod.nloc if mod.nloc is not None else 0
+        if mod.change_type is None:
+            continue
+        file_path = mod.old_path or mod.new_path
+        if should_ignore_path(file_path):
+            continue
+        added += mod.added
+        removed += mod.removed
+        nloc += mod.nloc if mod.nloc is not None else 0
     git_commit.lines_added = added
     git_commit.lines_removed = removed
     git_commit.lines_of_code = nloc
