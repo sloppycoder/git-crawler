@@ -57,6 +57,9 @@ class Repository(db.Model):
 class GitCommit(db.Model):
     id = db.Column(db.String(20), primary_key=True, nullable=False)
     message = db.Column(db.String(2048))
+    lines_added = db.Column(db.Integer)
+    lines_removed = db.Column(db.Integer)
+    lines_of_code = db.Column(db.Integer)
     author_id = db.Column(
         db.Integer, db.ForeignKey(f"{Author.__tablename__}.id"), nullable=False
     )
