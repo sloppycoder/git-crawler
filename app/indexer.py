@@ -106,7 +106,9 @@ def update_commit_stats(git_commit: GitCommit, modifications: list) -> GitCommit
     added, removed, nloc = 0, 0, 0
     for mod in modifications:
         if mod.change_type is not None:
-            # print(f"type={mod.change_type.name}, added={mod.added}, removed={mod.removed}, nloc={mod.nloc}")
+            # print(
+            #     f"type={mod.change_type.name}, added={mod.added}, removed={mod.removed}, nloc={mod.nloc}"
+            # )
             added += mod.added
             removed += mod.removed
             nloc += mod.nloc if mod.nloc is not None else 0
@@ -124,5 +126,5 @@ def first_repo(is_remote: bool) -> Repository:
     return Repository.query.filter_by(is_remote=is_remote).first()
 
 
-def index_all_repositories() ->None:
+def index_all_repositories() -> None:
     repo = Repository.query.filter_by(status=RepoStatus.Ready).first()

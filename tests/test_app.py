@@ -1,6 +1,7 @@
 import os
 import pytest
 import zipfile
+from pydriller import GitRepository
 from app.models import db
 from app.tasks import get_author_count, register_git_projects
 from app.indexer import (
@@ -119,13 +120,25 @@ def test_index_repository(client):
         new_commits = index_repository(repo)
         records_in_db = commit_count(repo)
 
+        print(f"new_commits = {new_commits}, records_in_db = {records_in_db}")
         assert records_in_db == new_commits
-        assert author_count() == 42 # what's the right number?
+        assert author_count() == 2  # what's the right number?
 
-        # index again won't create new records
-        assert index_repository(repo) == 0
+        # create some test commits and only new commits will be indexed
+        create_some_commit(repo.name, "d1.txt")
+        create_some_commit(repo.name, "d2.asc")
+        assert index_repository(repo) == 2
 
 
 def test_index_remote_repository(client):
     with client.application.app_context():
         index_repository(first_repo(is_remote=True))
+
+
+def create_some_commit(repo_path: str, file_name: str = "dummy.txt") -> None:
+    repo = GitRepository(repo_path).repo
+    a_file = f"{repo_path}/{file_name}"
+    with open(a_file, "w") as f:
+        f.write("something\n")
+    repo.index.add(a_file)
+    repo.index.commit("some commit")
