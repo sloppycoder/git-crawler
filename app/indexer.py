@@ -67,7 +67,8 @@ def locate_author(name: str, email: str, create: bool = True) -> Author:
 
 def index_repository(repo_url: str) -> int:
     for commit in RepositoryMining(repo_url).traverse_commits():
-        print(commit)
+        # author = locate_author(commit)
+        assert commit.author is not None
 
 
 def index_all_repositories():
