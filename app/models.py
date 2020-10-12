@@ -54,13 +54,14 @@ class Repository(db.Model):
         return f"[Repository<{self.name}>]"
 
 
-class Commit(db.Model):
+class GitCommit(db.Model):
     id = db.Column(db.String(20), primary_key=True, nullable=False)
     message = db.Column(db.String(2048))
     author_id = db.Column(
         db.Integer, db.ForeignKey(f"{Author.__tablename__}.id"), nullable=False
     )
     author = db.relationship("Author", backref="author", lazy=True)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.fromtimestamp(0))
     repo_id = db.Column(
         db.Integer, db.ForeignKey(f"{Repository.__tablename__}.id"), nullable=False
     )

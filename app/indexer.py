@@ -1,11 +1,11 @@
 from flask import current_app
 from pydriller import RepositoryMining
 from gitlab.v4.objects import GroupProject
-from .models import db, Author, Repository, Commit, RepoStatus
+from .models import db, Author, Repository, GitCommit, RepoStatus
 
 
 def author_count() -> int:
-    return len(Author.query.all())
+    return Author.query.count()
 
 
 def register_remote_repository(proj: GroupProject, repo_type: str) -> Repository:
@@ -65,10 +65,35 @@ def locate_author(name: str, email: str, create: bool = True) -> Author:
         author = author.parent
 
 
-def index_repository(repo_url: str) -> int:
+def index_repository(repo: Repository) -> int:
+    if repo is None:
+        return 0
+
+    count = 0
+    repo_url = repo.ssh_url if repo.is_remote else repo.name
     for commit in RepositoryMining(repo_url).traverse_commits():
-        dev = commit.author
-        author = locate_author(name=dev.name, email=dev.email)
+        if GitCommit.query.filter_by(id=commit.hash).first() is None:
+            dev = commit.author
+            author = locate_author(name=dev.name, email=dev.email)
+            entry = GitCommit(
+                id=commit.hash,
+                message=commit.msg,
+                author=author,
+                repo=repo,
+                created_at=commit.committer_date,
+            )
+            db.session.add(entry)
+            db.session.commit()
+            count += 1
+    return count
+
+
+def commit_count(repo: Repository) -> int:
+    return GitCommit.query.filter_by(repo=repo).count()
+
+
+def first_repo(is_remote: bool) -> Repository:
+    return Repository.query.filter_by(is_remote=is_remote).first()
 
 
 def index_all_repositories():

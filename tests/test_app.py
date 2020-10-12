@@ -1,9 +1,15 @@
 import os
 import pytest
 import zipfile
-from app.models import db, Repository, Author
+from app.models import db
 from app.tasks import get_author_count, register_git_projects
-from app.indexer import locate_author, author_count, index_repository
+from app.indexer import (
+    locate_author,
+    author_count,
+    index_repository,
+    commit_count,
+    first_repo,
+)
 from app.util import CrawlerConfig
 
 
@@ -21,7 +27,7 @@ def client(tmp_path):
         yield client
 
     try:
-        if os.getenv("FLASK_ENV") == "test":
+        if os.getenv("FLASK_ENV") == "test" and os.getenv("KEEP_TMPDB") != "yes":
             app.logger.warning(f"Deleting {app.config['SQLITE3_FILE']}")
             os.unlink(app.config["SQLITE3_FILE"])
     except FileNotFoundError:
@@ -35,7 +41,7 @@ def prep_test_conf(tmp_path):
     with zipfile.ZipFile("tests/data/not_a_repo.zip", "r") as zip_ref:
         zip_ref.extractall(tmp_path)
     conf = CrawlerConfig(ini_file="tests/data/test.ini").conf
-    conf["project.2"]["local_path"] = str(tmp_path)
+    conf["project.local"]["local_path"] = str(tmp_path)
     return conf
 
 
@@ -64,11 +70,9 @@ def test_crawler_config(client):
 
 def test_register_git_projects(client, tmp_path):
     with client.application.app_context():
-        conf = prep_test_conf(tmp_path)
-        register_git_projects(conf)
-
-        local_repo_count = Repository.query.filter_by(is_remote=False).count()
-        assert local_repo_count == 1
+        register_git_projects(client.crawler_conf)
+        local_repo = first_repo(is_remote=False)
+        assert local_repo is not None
 
 
 def test_find_author(client):
@@ -107,10 +111,21 @@ def test_find_author(client):
 
 def test_index_repository(client):
     with client.application.app_context():
-        path = client.crawler_conf["project.2"]["local_path"]
-        index_repository(f"{path}/repo1.git")
-        assert Author.query.filter_by(is_alias=False).count() == 47
+        repo = first_repo(is_remote=False)
+        if repo is None:
+            register_git_projects(client.crawler_conf)
+            repo = first_repo(is_remote=False)
 
-        index_repository(
-            "git@gitlab.com:mobilityaccelerator/ngcc/devsecops/elk-jenkins.git"
-        )
+        new_commits = index_repository(repo)
+        records_in_db = commit_count(repo)
+
+        assert records_in_db == new_commits
+        assert author_count() == 47
+
+        # index again won't create new records
+        assert index_repository(repo) == 0
+
+
+def test_index_remote_repository(client):
+    with client.application.app_context():
+        index_repository(first_repo(is_remote=True))
