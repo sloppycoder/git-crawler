@@ -1,4 +1,5 @@
 from flask import current_app
+from datetime import datetime, timedelta
 from pydriller import RepositoryMining
 from gitlab.v4.objects import GroupProject
 from .models import db, Author, Repository, GitCommit, RepoStatus
@@ -6,6 +7,20 @@ from .models import db, Author, Repository, GitCommit, RepoStatus
 
 def author_count() -> int:
     return Author.query.count()
+
+
+def commit_count(repo: Repository) -> int:
+    return GitCommit.query.filter_by(repo=repo).count()
+
+
+def first_repo(is_remote: bool) -> Repository:
+    return Repository.query.filter_by(is_remote=is_remote).first()
+
+
+def all_hash_for_repo(repo: Repository) -> dict:
+    return dict(
+        [(c.id, c.author.id) for c in GitCommit.query.filter_by(repo=repo).all()]
+    )
 
 
 def register_remote_repository(proj: GroupProject, repo_type: str) -> Repository:
@@ -95,12 +110,6 @@ def index_repository(repo: Repository) -> int:
     return count
 
 
-def all_hash_for_repo(repo: Repository) -> dict:
-    return dict(
-        [(c.id, c.author.id) for c in GitCommit.query.filter_by(repo=repo).all()]
-    )
-
-
 def update_commit_stats(git_commit: GitCommit, modifications: list) -> GitCommit:
     # TODO: evaluate how to update the stats carefully
     added, removed, nloc = 0, 0, 0
@@ -115,16 +124,22 @@ def update_commit_stats(git_commit: GitCommit, modifications: list) -> GitCommit
     git_commit.lines_added = added
     git_commit.lines_removed = removed
     git_commit.lines_of_code = nloc
+    git_commit.is_merge = added == 0 and removed == 0
     return git_commit
 
 
-def commit_count(repo: Repository) -> int:
-    return GitCommit.query.filter_by(repo=repo).count()
-
-
-def first_repo(is_remote: bool) -> Repository:
-    return Repository.query.filter_by(is_remote=is_remote).first()
-
-
 def index_all_repositories() -> None:
-    repo = Repository.query.filter_by(status=RepoStatus.Ready).first()
+    cut_off = datetime.now() - timedelta(minutes=15)
+    for repo in Repository.query.filter(
+        Repository.status == RepoStatus.Ready,
+        Repository.last_status_at < cut_off,
+    ):
+        print(f"indexing repo {repo.name} ")
+        try:
+            index_repository(repo)
+        except Exception as e:
+            repo.last_error = str(e)
+        repo.last_status_at = datetime.now()
+        db.session.add(repo)
+        db.session.commit()
+

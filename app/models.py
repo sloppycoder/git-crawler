@@ -60,6 +60,7 @@ class GitCommit(db.Model):
     lines_added = db.Column(db.Integer)
     lines_removed = db.Column(db.Integer)
     lines_of_code = db.Column(db.Integer)
+    is_merge = db.Column(db.Boolean, default=False)
     author_id = db.Column(
         db.Integer, db.ForeignKey(f"{Author.__tablename__}.id"), nullable=False
     )

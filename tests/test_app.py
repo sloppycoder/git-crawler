@@ -8,6 +8,7 @@ from app.indexer import (
     locate_author,
     author_count,
     index_repository,
+    index_all_repositories,
     commit_count,
     first_repo,
 )
@@ -69,6 +70,7 @@ def test_crawler_config(client):
         assert saved is not None
 
 
+@pytest.mark.dependency()
 def test_register_git_projects(client, tmp_path):
     with client.application.app_context():
         register_git_projects(client.crawler_conf)
@@ -110,17 +112,14 @@ def test_find_author(client):
         assert author_count() == total
 
 
+@pytest.mark.dependency(depends=["test_register_git_projects"])
 def test_index_repository(client):
     with client.application.app_context():
         repo = first_repo(is_remote=False)
-        if repo is None:
-            register_git_projects(client.crawler_conf)
-            repo = first_repo(is_remote=False)
-
         new_commits = index_repository(repo)
         records_in_db = commit_count(repo)
 
-        print(f"new_commits = {new_commits}, records_in_db = {records_in_db}")
+        # print(f"new_commits = {new_commits}, records_in_db = {records_in_db}")
         assert records_in_db == new_commits
         assert author_count() == 2  # what's the right number?
 
@@ -133,6 +132,12 @@ def test_index_repository(client):
 def test_index_remote_repository(client):
     with client.application.app_context():
         index_repository(first_repo(is_remote=True))
+
+
+@pytest.mark.dependency(depends=["test_register_git_projects"])
+def test_index_all_repositories(client):
+    with client.application.app_context():
+        index_all_repositories()
 
 
 def create_some_commit(repo_path: str, file_name: str = "dummy.txt") -> None:
