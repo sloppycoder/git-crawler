@@ -9,9 +9,9 @@ python = "^3.8"
 Flask = "^1.1.2"
 Flask-SQLAlchemy = "^2.4.4"
 celery = {version = "^4.4", extras = ["redis"]}
-python-gitlab = "^2.5.0"
 PyDriller = "^1.15.2"
 flower = "^0.9.5"
+python-gitlab = "^2.5.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1.1"
