@@ -1,7 +1,7 @@
 import os
 import pytest
 import zipfile
-from app.models import db, Repository
+from app.models import db, Repository, Author
 from app.tasks import get_author_count, register_git_projects
 from app.indexer import locate_author, author_count, index_repository
 from app.util import CrawlerConfig
@@ -17,7 +17,7 @@ def client(tmp_path):
         with app.app_context():
             db.init_app(app)
             db.create_all(app=app)
-            app.crawler_conf = prep_test_conf(tmp_path)
+            client.crawler_conf = prep_test_conf(tmp_path)
         yield client
 
     try:
@@ -105,8 +105,12 @@ def test_find_author(client):
         assert author_count() == total
 
 
-# def test_index_repository(tmp_path):
-#     index_repository(f"{tmp_path}/repo1.git")
-#     index_repository(
-#         "git@gitlab.com:mobilityaccelerator/ngcc/devsecops/elk-jenkins.git"
-#     )
+def test_index_repository(client):
+    with client.application.app_context():
+        path = client.crawler_conf["project.2"]["local_path"]
+        index_repository(f"{path}/repo1.git")
+        assert Author.query.filter_by(is_alias=False).count() == 47
+
+        index_repository(
+            "git@gitlab.com:mobilityaccelerator/ngcc/devsecops/elk-jenkins.git"
+        )
