@@ -8,7 +8,7 @@ import re
 # files matches any of the regex will not be counted
 # towards commit stats
 IGNORE_PATTERNS = [
-    re.compile("vendor/.*\\.go$"),
+    re.compile("^vendor/"),
     re.compile(".*\\.jar$"),
 ]
 
@@ -36,10 +36,11 @@ def should_ignore_path(path: str) -> bool:
     return true if the path should be ignore
     for calculating commit stats
     """
-    for re in IGNORE_PATTERNS:
-        if re.match(path):
+    for regex in IGNORE_PATTERNS:
+        if regex.match(path):
             return True
     return False
+
 
 def register_remote_repository(proj: GroupProject, repo_type: str) -> Repository:
     repo = Repository.query.filter_by(name=proj.path_with_namespace).first()
