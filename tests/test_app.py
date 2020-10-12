@@ -42,7 +42,7 @@ def prep_test_conf(tmp_path):
         zip_ref.extractall(tmp_path)
     with zipfile.ZipFile("tests/data/not_a_repo.zip", "r") as zip_ref:
         zip_ref.extractall(tmp_path)
-    conf = CrawlerConfig(ini_file="tests/data/test.ini").conf
+    conf = CrawlerConfig(ini_file="tests/test.ini").conf
     conf["project.local"]["local_path"] = str(tmp_path)
     return conf
 
@@ -60,7 +60,7 @@ def test_crawler_config(client):
     with client.application.app_context():
         assert CrawlerConfig(name="does_not_exist.ini").name is None
 
-        ini = CrawlerConfig(ini_file="tests/data/test.ini")
+        ini = CrawlerConfig(ini_file="tests/test.ini")
         assert len(ini.conf.sections()) > 1
         assert ini.name == "test.ini"
 
